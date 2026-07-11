@@ -1,0 +1,48 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ------------------------
+      # BACKEND (.NET)
+      # ------------------------
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('src/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+        working-directory: src/backend
+
+      - name: Check formatting (backend)
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+        working-directory: src/backend      
+
+      - name: Build (backend)
+        run: dotnet build --no-restore --configuration Release
+        working-directory: src/backend
+
+      - name: Run tests (backend)
+        run: dotnet test --no-build --configuration Release
+        working-directory: src/backend

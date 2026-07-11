@@ -1,0 +1,6 @@
+@GEC.API_HostAddress = http://localhost:5276
+
+GET {{GEC.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
