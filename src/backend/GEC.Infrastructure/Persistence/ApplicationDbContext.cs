@@ -18,7 +18,9 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Apply Fluent Configurations
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(ApplicationDbContext).Assembly,
+            type => type.Namespace is not null && type.Namespace.StartsWith("GEC.Infrastructure.Persistence"));
     }
 
     // Auto Set Time => For CreatedAt and UpdatedAt

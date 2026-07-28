@@ -3,6 +3,7 @@ using GEC.API.ErrorHandling;
 using GEC.ApplicationCore;
 using GEC.Infrastructure;
 using Serilog;
+using GEC.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,11 +17,14 @@ builder.Host.UseSerilog((context, services, configuration) =>
 });
 
 builder.Services
-    .AddPresentation()
+    .AddPresentation(builder.Configuration)
     .AddApplicationCore()
     .AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+// seed the roles
+await app.Services.SeedRolesAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -33,6 +37,7 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseCors("ReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

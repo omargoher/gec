@@ -1,6 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Text;
+using System.Text.Json.Serialization;
 using FluentValidation;
 using GEC.API.ErrorHandling;
+using GEC.ApplicationCore.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
@@ -8,7 +12,7 @@ namespace GEC.API;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers().AddJsonOptions(options =>
         {
@@ -26,6 +30,24 @@ public static class DependencyInjection
 
         AddSwagger(services);
 
+        services.AddAuthorization();
+
+        AddCors(services, configuration);
+
+        return services;
+    }
+
+    public static IServiceCollection AddCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        var allowedOrigin = configuration["Cors:AllowedOrigin"]
+                            ?? throw new InvalidOperationException("CORS AllowedOrigin is not configured.");
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy("ReactApp", policy =>
+                policy.WithOrigins(allowedOrigin)
+                    .AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+        });
         return services;
     }
 
