@@ -1,13 +1,11 @@
-using GEC.ApplicationCore.DTOs.Errors;
-
 namespace GEC.ApplicationCore.Exceptions;
 
 public class UnauthorizedException : AppException
 {
-    public UnauthorizedException()
+    public UnauthorizedException(string detail = "You are not authenticated.")
         : base(
-            message: "You are not authenticated.",
-            errorCode: ErrorCodes.Unauthorized,
+            title: "Unauthorized",
+            detail: detail,
             statusCode: 401)
     {
     }

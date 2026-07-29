@@ -2,7 +2,7 @@
 
 ## Add Entity to EF
 - We set the entities in the Domain layer, so if you want to add a new entity to EF, you must add it to the Domain layer first (inheriting from `BaseEntity`).
-- Add your entity as a `DbSet<EntityName>` property in the `ApplicationDbContext` class in the Infrastructure layer in [ApplicationDbContext.cs](file:///home/omar/RiderProjects/gec/src/backend/GEC.Infrastructure/Persistence/ApplicationDbContext.cs).
+- Add your entity as a `DbSet<EntityName>` property in the `ApplicationDbContext` class in the Infrastructure layer in [ApplicationDbContext.cs](../../backend/GEC.Infrastructure/Persistence/ApplicationDbContext.cs).
 - We use Fluent API to configure the entity in a separate configuration class under the Infrastructure layer in `src/backend/GEC.Infrastructure/Persistence/Configurations/` folder.
   - Create a new class for your entity and name it `<EntityName>EntityTypeConfiguration.cs`.
   - Implement the `IEntityTypeConfiguration<T>` interface and override the `Configure` method to configure the entity properties.

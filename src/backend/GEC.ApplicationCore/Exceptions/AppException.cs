@@ -1,18 +1,18 @@
-using GEC.ApplicationCore.DTOs.Errors;
-
 namespace GEC.ApplicationCore.Exceptions;
 
+/// <summary>
+/// Base class for all known/expected application exceptions.
+/// Any exception NOT inheriting from this is treated as unexpected (500).
+/// </summary>
 public abstract class AppException : Exception
 {
     public int StatusCode { get; }
-    public string ErrorCode { get; }
-    public List<FieldError> Errors { get; }
+    public string Title { get; }
 
-    protected AppException(string message, int statusCode = 500, string errorCode = ErrorCodes.InternalServerError, List<FieldError>? errors = null)
-        : base(message)
+    protected AppException(string title, string detail, int statusCode)
+        : base(detail)
     {
+        Title = title;
         StatusCode = statusCode;
-        ErrorCode = errorCode;
-        Errors = errors ?? [];
     }
 }

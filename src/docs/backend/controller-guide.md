@@ -70,8 +70,8 @@ Additionally, use `[ProducesResponseType]` to register response schema models fo
     /// <response code="409">A product with the same SKU/name already exists.</response>
     [HttpPost]
     [ProducesResponseType(typeof(ProductResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateAsync([FromBody] CreateProductRequest request)
     {
         // code
@@ -84,4 +84,4 @@ Additionally, use `[ProducesResponseType]` to register response schema models fo
 
 Do not return raw domain entities or ad-hoc anonymous objects. Always return:
 1.  **Successful Responses**: Standard DTOs (`ProductResponse`, `PagedResult<ProductResponse>`).
-2.  **Error Responses**: Standard `ErrorResponse` wrapper (handled automatically by validation configurations or `ExceptionMiddleware` for exceptions).
+2.  **Error Responses**: Standard RFC 7807 `ProblemDetails` or `ValidationProblemDetails` (handled automatically by built-in validation or the global exception handler).

@@ -23,8 +23,14 @@ public static class DependencyInjection
 
         // Register DB Context
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionString,
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+            options.UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorCodesToAdd: null);
+                npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+            }));
 
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
         // services.AddScoped<IEmailService, EmailService>();
@@ -40,6 +46,10 @@ public static class DependencyInjection
         services.AddDbContext<AppIdentityDbContext>(options =>
             options.UseNpgsql(connectionString, npgsql =>
             {
+                npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorCodesToAdd: null);
                 npgsql.MigrationsAssembly(typeof(AppIdentityDbContext).Assembly.FullName);
                 npgsql.MigrationsHistoryTable("__EFMigrationsHistory_Identity");
             }));
