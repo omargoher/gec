@@ -1,3 +1,4 @@
+using GEC.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ public class AppIdentityDbContext : IdentityDbContext<ApplicationUser, IdentityR
         : base(options)
     {
     }
-
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -20,4 +21,5 @@ public class AppIdentityDbContext : IdentityDbContext<ApplicationUser, IdentityR
             typeof(AppIdentityDbContext).Assembly,
             type => type.Namespace is not null && type.Namespace.StartsWith("GEC.Infrastructure.Identity"));
     }
+
 }

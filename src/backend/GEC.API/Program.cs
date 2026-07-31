@@ -72,7 +72,6 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
-app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseCors("ReactApp");
 app.UseAuthentication();
