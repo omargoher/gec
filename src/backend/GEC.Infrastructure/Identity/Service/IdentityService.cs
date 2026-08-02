@@ -87,6 +87,19 @@ public class IdentityService : IIdentityService
         await _userManager.ResetAccessFailedCountAsync(user);
     }
 
+    public async Task ConfirmEmailAsync(string userId)
+    {
+        var user = await GetUserOrThrowAsync(userId);
+        user.EmailConfirmed = true;
+        await _userManager.UpdateAsync(user);
+    }
+
+    public async Task<bool> IsEmailConfirmedAsync(string userId)
+    {
+        var user = await GetUserOrThrowAsync(userId);
+        return await _userManager.IsEmailConfirmedAsync(user);
+    }
+
     private async Task<ApplicationUser> GetUserOrThrowAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);

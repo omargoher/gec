@@ -24,6 +24,11 @@ public static class DependencyInjection
 
         // Register Configuration
         services.Configure<TestOptions>(configuration.GetSection("TestSettings"));
+        services.Configure<MailOptions>(configuration.GetSection(MailOptions.SectionName));
+        services.AddOptions<OtpOptions>()
+            .Bind(configuration.GetSection(OtpOptions.SectionName))
+            .Validate(options => !string.IsNullOrWhiteSpace(options.PepperKey), "OTP Pepper must not be empty!")
+            .ValidateOnStart();
         var connectionString = configuration.GetConnectionString("pgsql");
 
         // Register DB Context
@@ -37,10 +42,15 @@ public static class DependencyInjection
                 npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
             }));
 
+        services.AddMemoryCache();
+        services.AddSingleton<ICacheService, MemoryCacheService>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
-        // services.AddScoped<IEmailService, EmailService>();
-
+        services.AddTransient<IEmailService, MailKitEmailService>();
+        services.AddSingleton<IOtpService, OtpService>();
+        services.AddTransient<IOtpManager, OtpManager>();
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<ITestUserRepository, TestUserRepository>();
+
         return services;
     }
 
@@ -71,6 +81,7 @@ public static class DependencyInjection
                 options.Password.RequiredLength = 8;
                 options.Password.RequireUppercase = true;
                 options.Password.RequireLowercase = true;
+                options.SignIn.RequireConfirmedAccount = true;
                 options.Password.RequireNonAlphanumeric = true;
 
                 options.Lockout.MaxFailedAccessAttempts = 5;

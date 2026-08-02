@@ -18,6 +18,7 @@ public static class DependencyInjection
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
+        services.AddHttpContextAccessor();
         services.AddOpenApi();
         services.AddEndpointsApiExplorer();
 
