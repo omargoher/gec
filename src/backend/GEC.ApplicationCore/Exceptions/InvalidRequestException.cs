@@ -1,13 +1,11 @@
-using GEC.ApplicationCore.DTOs.Errors;
-
 namespace GEC.ApplicationCore.Exceptions;
 
 public class InvalidRequestException : AppException
 {
-    public InvalidRequestException(string message)
+    public InvalidRequestException(string detail)
         : base(
-            message: message,
-            errorCode: ErrorCodes.InvalidRequest,
+            title: "Invalid Request",
+            detail: detail,
             statusCode: 400)
     { }
 }

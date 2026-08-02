@@ -1,13 +1,11 @@
-using GEC.ApplicationCore.DTOs.Errors;
-
 namespace GEC.ApplicationCore.Exceptions;
 
 public class DomainException : AppException
 {
-    public DomainException(string message)
+    public DomainException(string detail)
         : base(
-            message: message,
-            errorCode: ErrorCodes.DomainRuleViolation,
+            title: "Domain Rule Violation",
+            detail: detail,
             statusCode: 400)
     { }
 }

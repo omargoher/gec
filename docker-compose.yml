@@ -11,19 +11,41 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+    
+  seq:
+    image: datalust/seq:latest
+    container_name: gec-seq
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: "Admin@gec"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    
   backend:
     build:
       context: ./src/backend
       dockerfile: GEC.API/Dockerfile
     container_name: gec_backend
     depends_on:
-      - postgres
+      postgres:
+          condition: service_healthy
+      seq:
+          condition: service_started
     ports:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__pgsql=Host=${DB_HOST};Port=${DB_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Serilog__WriteTo__1__Args__serverUrl=http://seq:80
 
 volumes:
   postgres_data:
+  seq_data:

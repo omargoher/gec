@@ -1,10 +1,5 @@
-﻿using System.Text;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using FluentValidation;
-using GEC.API.ErrorHandling;
-using GEC.ApplicationCore.Options;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
@@ -22,10 +17,7 @@ public static class DependencyInjection
         services.AddOpenApi();
         services.AddEndpointsApiExplorer();
 
-        services.AddFluentValidationAutoValidation(config =>
-        {
-            config.OverrideDefaultResultFactoryWith<CustomResultFactory>();
-        });
+        services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssembly(typeof(ApplicationCore.DependencyInjection).Assembly);
 
         AddSwagger(services);

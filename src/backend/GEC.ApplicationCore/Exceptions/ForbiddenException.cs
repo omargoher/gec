@@ -1,13 +1,11 @@
-using GEC.ApplicationCore.DTOs.Errors;
-
 namespace GEC.ApplicationCore.Exceptions;
 
 public class ForbiddenException : AppException
 {
-    public ForbiddenException()
+    public ForbiddenException(string detail = "You do not have permission to access this resource.")
         : base(
-            message: "You do not have permission to access this resource.",
-            errorCode: ErrorCodes.Forbidden,
+            title: "Forbidden",
+            detail: detail,
             statusCode: 403)
     {
     }

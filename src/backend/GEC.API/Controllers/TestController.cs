@@ -1,4 +1,3 @@
-using GEC.ApplicationCore.DTOs.Errors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,7 +32,8 @@ public class TestController : ControllerBase
     /// <response code="400">Invalid request payload.</response>
     [HttpPost]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> TestAsync([FromBody] string test)
     {
         return Ok(test);
