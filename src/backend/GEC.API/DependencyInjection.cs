@@ -1,5 +1,9 @@
-﻿using System.Text.Json.Serialization;
+using System.Text;
+using System.Text.Json.Serialization;
 using FluentValidation;
+using GEC.ApplicationCore.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
@@ -25,6 +29,48 @@ public static class DependencyInjection
         services.AddAuthorization();
 
         AddCors(services, configuration);
+
+        AddJwtOptions(services, configuration);
+        AddJwtAuthentication(services, configuration);
+
+        return services;
+    }
+
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+            ?? throw new InvalidOperationException("Jwt configuration section is missing.");
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (context.Request.Cookies.TryGetValue("accessToken", out var token))
+                        {
+                            context.Token = token;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                };
+            });
 
         return services;
     }
@@ -73,6 +119,12 @@ public static class DependencyInjection
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "GEC.ApplicationCore.xml"));
         });
 
+        return services;
+    }
+
+    public static IServiceCollection AddJwtOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         return services;
     }
 }

@@ -1,9 +1,14 @@
+using GEC.ApplicationCore.Interfaces.Identity;
 using GEC.ApplicationCore.Interfaces.Persistence;
 using GEC.ApplicationCore.Interfaces.Repositories;
+using GEC.ApplicationCore.Interfaces.Services;
 using GEC.ApplicationCore.Options;
 using GEC.Infrastructure.Identity;
+using GEC.Infrastructure.Identity.Service;
 using GEC.Infrastructure.Persistence;
 using GEC.Infrastructure.Repositories;
+using GEC.Infrastructure.Services;
+using GEC.Infrastructure.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -80,6 +85,12 @@ public static class DependencyInjection
         {
             options.TokenLifespan = TimeSpan.FromHours(3);
         });
+
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IIdentityUnitOfWork, IdentityUnitOfWork>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         return services;
     }
