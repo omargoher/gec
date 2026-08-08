@@ -42,6 +42,9 @@ public class GlobalExceptionHandler : IExceptionHandler
                 statusCode, exception.Message);
         }
 
+        httpContext.Response.StatusCode = statusCode;
+        httpContext.Request.Headers.Accept = "application/problem+json";
+
         var problemDetails = new ProblemDetails
         {
             Title = title,
@@ -54,13 +57,20 @@ public class GlobalExceptionHandler : IExceptionHandler
             Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}",
         };
 
-        httpContext.Response.StatusCode = statusCode;
 
-        return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        var written = await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             ProblemDetails = problemDetails,
             Exception = exception
         });
+
+        if (!written)
+        {
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        }
+
+        return true;
     }
 }

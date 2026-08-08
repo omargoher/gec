@@ -13,4 +13,6 @@ public interface IIdentityService
     Task<bool> IsLockedOutAsync(string userId);
     Task AccessFailedAsync(string userId);
     Task ResetAccessFailedCountAsync(string userId);
+    Task ConfirmEmailAsync(string userId);
+    Task<bool> IsEmailConfirmedAsync(string userId);
 }

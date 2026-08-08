@@ -1,0 +1,174 @@
+<!--
+  GEC — Universal OTP Email Template
+  =========================================================
+  Works for: email verification, password reset, login 2FA,
+  or any other "here's your code" use case.
+
+  HOW TO USE
+  ----------
+  This is a server-side template. Before sending, replace every
+  {{PLACEHOLDER}} below with real values (simple string.replace()
+  works fine, or use a templating engine like Handlebars/EJS).
+
+  Placeholders:
+    {{LOGO_URL}}        - Publicly hosted URL to your GEC logo (PNG/SVG on
+                           a light background). Email clients cannot load
+                           local files or most base64 images reliably
+                           (Outlook desktop in particular), so host the
+                           logo on your site/CDN and use a full https:// URL.
+    {{HEADLINE}}         - e.g. "Verify your email" or "Reset your password"
+    {{INTRO_TEXT}}       - 1 short sentence of context, e.g.
+                           "Use the code below to verify your email address."
+                           or "Use the code below to reset your password."
+    {{OTP_CODE}}         - The actual one-time code, e.g. "482913"
+    {{EXPIRY_MINUTES}}   - e.g. "10"
+    {{SUPPORT_EMAIL}}    - e.g. "support@gec.com"
+    {{YEAR}}             - current year, e.g. "2026"
+ -->
+
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{HEADLINE}}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        body, table, td { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; }
+        body { margin: 0; padding: 0; background-color: #f2f4f7; }
+        img { border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+        table { border-collapse: collapse; }
+        a { color: #1e6fee; }
+
+        @media only screen and (max-width: 600px) {
+            .email-wrapper { width: 100% !important; }
+            .email-body-padding { padding-left: 24px !important; padding-right: 24px !important; }
+            .otp-box { font-size: 30px !important; letter-spacing: 6px !important; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f2f4f7;">
+<!-- Preheader (hidden preview text) -->
+<div style="display:none; max-height:0; overflow:hidden; font-size:1px; line-height:1px; color:#f2f4f7; opacity:0;">
+    Your GEC security code is inside. It expires in {{EXPIRY_MINUTES}} minutes.
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f2f4f7;">
+    <tr>
+        <td align="center" style="padding: 32px 16px;">
+
+            <table role="presentation" class="email-wrapper" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:12px; overflow:hidden;">
+
+                <!-- Logo header -->
+                <tr>
+                    <td align="center" style="padding: 36px 24px 20px 24px; background-color:#ffffff;">
+                        <!-- Replace src with your hosted logo URL. alt text shown if image is blocked. -->
+                        <img src="https://i.postimg.cc/Jnbn0Qxy/photo-6014789033478786236-y.jpg" width="140" alt="GEC — Custom E-Commerce Solutions" style="display:block; max-width:140px; height:auto;">
+                    </td>
+                </tr>
+
+                <!-- Accent divider -->
+                <tr>
+                    <td style="padding: 0 24px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="height:3px; line-height:3px; font-size:3px; background:linear-gradient(90deg, #0f1b33 0%, #1e6fee 50%, #0f1b33 100%); background-color:#1e6fee;">&nbsp;</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td class="email-body-padding" style="padding: 36px 40px 12px 40px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" style="font-size:22px; font-weight:700; color:#0f1b33; padding-bottom:12px;">
+                                    {{HEADLINE}}
+                                </td>
+                            </tr>
+<!--                            <tr>-->
+<!--                                <td align="center" style="font-size:15px; line-height:22px; color:#4a5568; padding-bottom:28px;">-->
+<!--                                    {{INTRO_TEXT}}-->
+<!--                                </td>-->
+<!--                            </tr>-->
+
+                            <!-- OTP code box — click to copy (works only where JS runs, see note in header comment) -->
+                            <tr>
+                                <td align="center" style="padding-bottom: 10px;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td align="center" id="otp-box" class="otp-box" style="cursor:pointer; background-color:#f2f6ff; border:1px solid #dce6fb; border-radius:10px; padding: 18px 36px; font-size:34px; font-weight:700; letter-spacing:10px; color:#0f1b33; font-family: 'Courier New', Courier, monospace;">
+                                                {{OTP_CODE}}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td align="center" style="font-size:14px; line-height:20px; color:#718096; padding-bottom:8px;">
+                                    This code expires in <strong style="color:#0f1b33;">{{EXPIRY_MINUTES}} minutes</strong>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="font-size:14px; line-height:20px; color:#718096; padding-bottom:32px;">
+                                    Didn't request this? You can safely ignore this email — no changes will be made to your account.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td style="border-top:1px solid #edf1f7; padding-top:20px;">
+                                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="font-size:12px; line-height:18px; color:#a0aec0;">
+                                                For your security, never share this code with anyone — GEC staff will never ask you for it.
+                                                Need help? Contact us at <a href="mailto:{{SUPPORT_EMAIL}}" style="color:#1e6fee; text-decoration:none;">{{SUPPORT_EMAIL}}</a>.
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td align="center" style="background-color:#0f1b33; padding: 22px 24px;">
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" style="font-size:13px; font-weight:700; letter-spacing:1px; color:#ffffff; padding-bottom:4px;">
+                                    GEC
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="font-size:11px; letter-spacing:1px; color:#8ea2c4; text-transform:uppercase;">
+                                    Custom E-Commerce Solutions
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="font-size:11px; color:#5c6d8a; padding-top:14px;">
+                                    &copy; {{YEAR}} GEC. All rights reserved.
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+</body>
+</html>

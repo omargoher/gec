@@ -1,3 +1,4 @@
+using GEC.ApplicationCore.DTOs;
 using GEC.ApplicationCore.DTOs.Auth;
 using GEC.ApplicationCore.Exceptions;
 using GEC.ApplicationCore.Interfaces.Identity;
@@ -6,6 +7,7 @@ using GEC.ApplicationCore.Interfaces.Services;
 using GEC.ApplicationCore.Options;
 using GEC.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace GEC.Infrastructure.Services;
@@ -17,19 +19,25 @@ public class AuthenticationService : IAuthenticationService
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IIdentityUnitOfWork _unitOfWork;
     private readonly JwtOptions _jwtOptions;
+    private readonly IOtpManager _otpManager;
+    private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         IIdentityService identityService,
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
         IIdentityUnitOfWork unitOfWork,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        ILogger<AuthenticationService> logger,
+        IOtpManager otpManager)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _refreshTokenRepository = refreshTokenRepository;
         _unitOfWork = unitOfWork;
         _jwtOptions = jwtOptions.Value;
+        _otpManager = otpManager;
+        _logger = logger;
     }
 
     public async Task<AuthResponse> LoginAsync(
@@ -49,6 +57,9 @@ public class AuthenticationService : IAuthenticationService
             // exists and is locked" from "wrong password" / "no such account",
             // which is an account-enumeration and lockout-state leak.
             throw new UnauthorizedException("Invalid email or password.");
+
+        if (await _identityService.IsEmailConfirmedAsync(user.Id) == false)
+            throw new UnauthorizedException("Email is not confirmed.");
 
         var passwordValid =
             await _identityService.CheckPasswordAsync(user.Id, request.Password);
@@ -218,7 +229,7 @@ public class AuthenticationService : IAuthenticationService
 
         if (existingUser is not null)
         {
-            throw new ConflictException("email already exists.");
+            throw new ConflictException("User");
         }
 
         // Create the Identity user
@@ -234,6 +245,15 @@ public class AuthenticationService : IAuthenticationService
 
         // Assign the default role
         await _identityService.AddToRoleAsync(result.UserId, "Customer");
+
+        try
+        {
+            await _otpManager.SendOtpAsync(request.Email, OtpPurpose.EmailVerification, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send verification OTP to {Email} during registration.", request.Email);
+        }
 
         return new AppUserDto(
             result.UserId,
