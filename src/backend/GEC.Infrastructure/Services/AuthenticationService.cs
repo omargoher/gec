@@ -7,6 +7,7 @@ using GEC.ApplicationCore.Interfaces.Repositories;
 using GEC.ApplicationCore.Interfaces.Services;
 using GEC.ApplicationCore.Options;
 using GEC.Domain.Entities;
+using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly ILogger<AuthenticationService> _logger;
     private readonly ICustomerRepository _customerRepository;
     private readonly IUnitOfWork _context;
+    private readonly ExternalAuthOptions _externalAuthOptions;
 
     public AuthenticationService(
         IIdentityService identityService,
@@ -34,7 +36,8 @@ public class AuthenticationService : IAuthenticationService
         ILogger<AuthenticationService> logger,
         IOtpManager otpManager,
         ICustomerRepository customerRepository,
-        IUnitOfWork context)
+        IUnitOfWork context,
+        IOptions<ExternalAuthOptions> externalAuthOptions)
     {
         _identityService = identityService;
         _tokenService = tokenService;
@@ -45,6 +48,7 @@ public class AuthenticationService : IAuthenticationService
         _logger = logger;
         _customerRepository = customerRepository;
         _context = context;
+        _externalAuthOptions = externalAuthOptions.Value;
     }
 
     public async Task<AuthResponse> LoginAsync(
@@ -308,5 +312,57 @@ public class AuthenticationService : IAuthenticationService
 
             throw;
         }
+    }
+
+    public async Task<AuthResponse> LoginWithGoogleAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default)
+    {
+        GoogleJsonWebSignature.Payload payload;
+
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(
+                request.IdToken,
+                new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { _externalAuthOptions.GoogleClientId }
+                });
+        }
+        catch (Exception e)
+        {
+            throw new UnauthorizedException("Invalid Google token.");
+        }
+
+        if (!payload.EmailVerified)
+            throw new UnauthorizedException("Google email not verified.");
+
+        var user = await _identityService.FindByEmailAsync(payload.Email);
+
+        if (user is null)
+        {
+            // Just-In-Time User Provisioning
+
+            var result = await _identityService.CreateExternalUserAsync(
+                payload.Email,
+                payload.Name);
+
+            if (!result.Succeeded)
+                throw new InvalidRequestException($"{result.Errors}");
+
+            await _identityService.AddToRoleAsync(result.UserId, "Customer");
+        }
+
+        user = await _identityService.FindByEmailAsync(payload.Email);
+
+        var accessToken = _tokenService.GenerateAccessToken(user!);
+        var rawRefreshToken = _tokenService.GenerateRefreshToken();
+        var refreshTokenHash = _tokenService.HashToken(rawRefreshToken);
+
+        var refreshToken = CreateRefreshToken(
+                user!.Id, refreshTokenHash, Guid.NewGuid(), DateTime.UtcNow);
+
+        await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new AuthResponse(accessToken, rawRefreshToken);
     }
 }

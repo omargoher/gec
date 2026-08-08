@@ -6,6 +6,8 @@ public interface IIdentityService
 {
     Task<(bool Succeeded, string? UserId, IEnumerable<string> Errors)> CreateUserAsync(
         string email, string password);
+    Task<(bool Succeeded, string? UserId, IEnumerable<string> Errors)> CreateExternalUserAsync(
+        string email, string name);
     Task<AppUserDto?> FindByEmailAsync(string email);
     Task<AppUserDto?> FindByIdAsync(string userId);
     Task<bool> CheckPasswordAsync(string userId, string password);

@@ -25,4 +25,6 @@ public interface IAuthenticationService
     public Task
         LogoutAllAsync(string userId, CancellationToken cancellationToken = default);
 
+    Task<AuthResponse> LoginWithGoogleAsync(GoogleLoginRequest request,
+        CancellationToken cancellationToken = default);
 }
