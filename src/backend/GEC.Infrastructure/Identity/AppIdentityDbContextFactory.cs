@@ -27,7 +27,7 @@ public class AppIdentityDbContextFactory
         optionsBuilder.UseNpgsql(connectionString, npgsql =>
         {
             npgsql.MigrationsAssembly(typeof(AppIdentityDbContext).Assembly.FullName);
-            npgsql.MigrationsHistoryTable("__EFMigrationsHistory_Identity");
+            npgsql.MigrationsHistoryTable("__ef_migrations_history_identit");
         });
 
         return new AppIdentityDbContext(optionsBuilder.Options);
