@@ -11,14 +11,21 @@ public static class DatabaseExtensions
     {
         using var scope = serviceProvider.CreateScope();
         var services = scope.ServiceProvider;
-        var logger = services.GetRequiredService<ILogger<AppIdentityDbContext>>();
+
+        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("DatabaseMigrations");
 
         try
         {
-            var dbContext = services.GetRequiredService<AppIdentityDbContext>();
-            logger.LogInformation("Applying pending database migrations...");
-            await dbContext.Database.MigrateAsync();
-            logger.LogInformation("Database migrations applied successfully.");
+            logger.LogInformation("Applying pending migrations for AppIdentityDbContext...");
+            var identityDbContext = services.GetRequiredService<AppIdentityDbContext>();
+            await identityDbContext.Database.MigrateAsync();
+            logger.LogInformation("AppIdentityDbContext migrations applied successfully.");
+
+            logger.LogInformation("Applying pending migrations for ApplicationDbContext...");
+            var appDbContext = services.GetRequiredService<ApplicationDbContext>();
+            await appDbContext.Database.MigrateAsync();
+            logger.LogInformation("ApplicationDbContext migrations applied successfully.");
         }
         catch (Exception ex)
         {

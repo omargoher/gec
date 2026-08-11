@@ -7,8 +7,6 @@ public class ApplicationUserEntityTypeConfiguration : IEntityTypeConfiguration<A
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
-        builder.Property(u => u.Name)
-            .IsRequired()
-            .HasMaxLength(100);
+
     }
 }

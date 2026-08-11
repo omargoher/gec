@@ -5,7 +5,7 @@ namespace GEC.ApplicationCore.Interfaces.Identity;
 public interface IIdentityService
 {
     Task<(bool Succeeded, string? UserId, IEnumerable<string> Errors)> CreateUserAsync(
-        string email, string password, string name);
+        string email, string password);
     Task<AppUserDto?> FindByEmailAsync(string email);
     Task<AppUserDto?> FindByIdAsync(string userId);
     Task<bool> CheckPasswordAsync(string userId, string password);
@@ -15,4 +15,8 @@ public interface IIdentityService
     Task ResetAccessFailedCountAsync(string userId);
     Task ConfirmEmailAsync(string userId);
     Task<bool> IsEmailConfirmedAsync(string userId);
+    Task DeleteUserAsync(
+        string userId);
+
+    Task ChangePassword(string userId, string oldPassword, string newPassword);
 }

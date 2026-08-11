@@ -2,6 +2,7 @@ using GEC.ApplicationCore.DTOs;
 using GEC.ApplicationCore.DTOs.Auth;
 using GEC.ApplicationCore.Exceptions;
 using GEC.ApplicationCore.Interfaces.Identity;
+using GEC.ApplicationCore.Interfaces.Persistence;
 using GEC.ApplicationCore.Interfaces.Repositories;
 using GEC.ApplicationCore.Interfaces.Services;
 using GEC.ApplicationCore.Options;
@@ -21,6 +22,8 @@ public class AuthenticationService : IAuthenticationService
     private readonly JwtOptions _jwtOptions;
     private readonly IOtpManager _otpManager;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly ICustomerRepository _customerRepository;
+    private readonly IUnitOfWork _context;
 
     public AuthenticationService(
         IIdentityService identityService,
@@ -29,7 +32,9 @@ public class AuthenticationService : IAuthenticationService
         IIdentityUnitOfWork unitOfWork,
         IOptions<JwtOptions> jwtOptions,
         ILogger<AuthenticationService> logger,
-        IOtpManager otpManager)
+        IOtpManager otpManager,
+        ICustomerRepository customerRepository,
+        IUnitOfWork context)
     {
         _identityService = identityService;
         _tokenService = tokenService;
@@ -38,6 +43,8 @@ public class AuthenticationService : IAuthenticationService
         _jwtOptions = jwtOptions.Value;
         _otpManager = otpManager;
         _logger = logger;
+        _customerRepository = customerRepository;
+        _context = context;
     }
 
     public async Task<AuthResponse> LoginAsync(
@@ -218,48 +225,88 @@ public class AuthenticationService : IAuthenticationService
     /*
      * TODO: Create Transactional for create email and assign role
      */
-    public async Task<AppUserDto> RegisterAsync(
+    public async Task<RegisterResponse> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // Check if the email is already registered
-        var existingUser = await _identityService.FindByEmailAsync(request.Email);
+        var existingUser = await _identityService.FindByEmailAsync(
+            request.Email);
 
         if (existingUser is not null)
-        {
-            throw new ConflictException("User");
-        }
+            throw new ConflictException("Email already exists.");
 
-        // Create the Identity user
-        var result = await _identityService.CreateUserAsync(
-            request.Email,
-            request.Password,
-            request.Name);
-
-        if (!result.Succeeded)
-        {
-            throw new InvalidRequestException($"{result.Errors}");
-        }
-
-        // Assign the default role
-        await _identityService.AddToRoleAsync(result.UserId, "Customer");
+        string? userId = null;
 
         try
         {
-            await _otpManager.SendOtpAsync(request.Email, OtpPurpose.EmailVerification, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send verification OTP to {Email} during registration.", request.Email);
-        }
+            // 1. Create Identity user
+            var result = await _identityService.CreateUserAsync(
+                request.Email,
+                request.Password);
 
-        return new AppUserDto(
-            result.UserId,
-            request.Email,
-            request.Name,
-            new List<string> { "Customer" }
-        );
+            if (!result.Succeeded)
+            {
+                throw new InvalidRequestException(
+                    string.Join(", ", result.Errors));
+            }
+
+            userId = result.UserId;
+
+            // 2. Assign default role
+            await _identityService.AddToRoleAsync(
+                userId,
+                "Customer");
+
+            // 3. Create Customer
+            var customer = new Customer
+            {
+                IdentityUserId = userId,
+                Name = request.Name,
+                Email = request.Email,
+                Addresses = []
+            };
+
+            _customerRepository.Add(customer);
+
+            // 4. Save Customer
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            // TODO convert it to background job
+            try
+            {
+                await _otpManager.SendOtpAsync(request.Email, OtpPurpose.EmailVerification, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send verification OTP to {Email} during registration.", request.Email);
+            }
+
+            // 5. Everything succeeded
+            return new RegisterResponse(
+                userId,
+                request.Email,
+                request.Name,
+                ["Customer"]);
+        }
+        catch
+        {
+            // Identity user was created, but something later failed.
+            if (userId is not null)
+            {
+                try
+                {
+                    await _identityService.DeleteUserAsync(userId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Orphan Identity user created. Failed to delete UserId: {UserId}", userId);
+                }
+            }
+
+            throw;
+        }
     }
 }
