@@ -4,7 +4,7 @@ namespace GEC.ApplicationCore.Interfaces.Services;
 
 public interface IAuthenticationService
 {
-    Task<AppUserDto> RegisterAsync(
+    Task<RegisterResponse> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default);
 

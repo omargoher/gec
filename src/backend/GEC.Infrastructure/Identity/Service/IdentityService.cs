@@ -15,9 +15,9 @@ public class IdentityService : IIdentityService
     }
 
     public async Task<(bool Succeeded, string? UserId, IEnumerable<string> Errors)> CreateUserAsync(
-        string email, string password, string name)
+        string email, string password)
     {
-        var user = new ApplicationUser { Email = email, Name = name, UserName = email };
+        var user = new ApplicationUser { Email = email, UserName = email };
         var result = await _userManager.CreateAsync(user, password);
 
         return (
@@ -37,7 +37,6 @@ public class IdentityService : IIdentityService
         return new AppUserDto(
             Id: user.Id,
             Email: user.Email!,
-            Name: user.Name,
             Roles: roles.ToList().AsReadOnly()
         );
     }
@@ -52,7 +51,6 @@ public class IdentityService : IIdentityService
         return new AppUserDto(
             Id: user.Id,
             Email: user.Email!,
-            Name: user.Name,
             Roles: roles.ToList().AsReadOnly()
         );
     }
@@ -66,7 +64,15 @@ public class IdentityService : IIdentityService
     public async Task AddToRoleAsync(string userId, string role)
     {
         var user = await GetUserOrThrowAsync(userId);
-        await _userManager.AddToRoleAsync(user, role);
+        var result = await _userManager.AddToRoleAsync(user, role);
+
+        // this is violate the Consistency .. because in another methods not throw exceptions when fails
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"Failed to assign role '{role}' to user '{userId}'. " +
+                $"Errors: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
     }
 
     public async Task<bool> IsLockedOutAsync(string userId)
@@ -107,5 +113,26 @@ public class IdentityService : IIdentityService
             throw new NotFoundException("User");
 
         return user;
+    }
+    public async Task DeleteUserAsync(
+        string userId)
+    {
+        var user = await GetUserOrThrowAsync(userId);
+
+        var result = await _userManager.DeleteAsync(user);
+
+        // this is violate the Consistency .. because in another methods not throw exceptions when fails
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                "Failed to delete user during registration rollback.");
+        }
+    }
+
+    public async Task ChangePassword(string userId, string oldPassword, string newPassword)
+    {
+        var user = await GetUserOrThrowAsync(userId);
+
+        var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
     }
 }

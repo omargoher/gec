@@ -51,6 +51,8 @@ public static class DependencyInjection
         services.AddTransient<IOtpManager, OtpManager>();
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<ITestUserRepository, TestUserRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IAddressRepository, AddressRepository>();
 
         return services;
     }

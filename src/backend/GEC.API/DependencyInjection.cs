@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using FluentValidation;
+using GEC.API.Services;
+using GEC.ApplicationCore.Interfaces.Identity;
 using GEC.ApplicationCore.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -33,6 +35,8 @@ public static class DependencyInjection
 
         AddJwtOptions(services, configuration);
         AddJwtAuthentication(services, configuration);
+
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;
     }
