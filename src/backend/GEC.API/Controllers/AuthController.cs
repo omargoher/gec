@@ -11,16 +11,17 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 namespace GEC.API.Controllers;
 
 /// <summary>
-/// Registration, login, refresh, and logout endpoints.
+/// Registration and session (login / refresh / logout) endpoints.
 /// </summary>
 /// <remarks>
-/// The access token is returned in the response body and must be sent as a
-/// <c>Bearer</c> token on subsequent requests. The refresh token is never
-/// exposed to the client-side script: it's set as an httpOnly, secure cookie
-/// scoped to <c>/api/auth</c>, and rotated on every refresh.
+/// The access token is returned to the client as an HTTP-Only cookie, not in the
+/// response body — the client never reads or handles it directly, it's just sent
+/// back automatically by the browser on subsequent requests. The refresh token is
+/// likewise never exposed to client-side script: it's set as an httpOnly, secure
+/// cookie and rotated every time it's used.
 /// </remarks>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 [Tags("Auth")]
 public class AuthController : ControllerBase
 {
@@ -39,19 +40,25 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Registers a new account.
+    /// Creates a new account (a "registration").
     /// </summary>
     /// <param name="request">Email, password, and display name for the new account.</param>
     /// <param name="cancellationToken"></param>
+    /// <remarks>
+    /// The account is created and assigned the default "Customer" role even if the
+    /// verification email fails to send — email delivery is best-effort and is not
+    /// rolled back on failure, so a 200 here does not guarantee the user received
+    /// an OTP. The account still requires email confirmation before
+    /// </remarks>
     /// <response code="200">Account created; AppUserDto details returned.</response>
     /// <response code="400">Validation failed, or the password didn't meet the identity policy.</response>
     /// <response code="409">An account with this email already exists.</response>
-    [HttpPost("register")]
+    [HttpPost("registrations")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AppUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<AppUserDto>> RegisterAsync(
+    public async Task<ActionResult<AppUserDto>> CreateRegistrationAsync(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
@@ -60,19 +67,23 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Logs in with an email and password.
+    /// Creates a session (logs in) with an email and password.
     /// </summary>
     /// <param name="request">Email and password.</param>
     /// <param name="cancellationToken"></param>
-    /// <response code="204">Logged in successfully, access and refresh tokens set as HTTP-Only cookies.</response>
+    /// <response code="204">Session created; access and refresh tokens set as HTTP-Only cookies.</response>
     /// <response code="400">Validation failed.</response>
-    /// <response code="401">Invalid credentials, or the account is locked out.</response>
-    [HttpPost("login")]
+    /// <response code="401">
+    /// Invalid credentials, the account is locked out, or the account's email has not
+    /// been confirmed yet. All three cases return the same generic message to avoid
+    /// leaking account existence or lockout state to the caller.
+    /// </response>
+    [HttpPost("sessions")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> LoginAsync(
+    public async Task<IActionResult> CreateSessionAsync(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
@@ -85,16 +96,22 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Exchanges the refresh token cookie for a new access token, rotating both tokens in HTTP-Only cookies.
+    /// Replaces the current session's tokens (refreshes) using the refresh token cookie.
     /// </summary>
     /// <param name="cancellationToken"></param>
-    /// <response code="204">Tokens rotated successfully.</response>
-    /// <response code="401">Missing, expired, or already-used refresh token. The client should redirect to login.</response>
-    [HttpPost("refresh")]
-    [Authorize]
+    /// <remarks>
+    /// This endpoint allows anonymous requests so clients with expired access tokens 
+    /// can obtain a new token pair using a valid, unexpired refresh token cookie.
+    /// </remarks>
+    /// <response code="204">Tokens rotated successfully; new access and refresh cookies set.</response>
+    /// <response code="401">
+    /// Missing, expired, or invalid refresh token cookie.
+    /// </response>
+    [HttpPut("sessions/current")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshAsync(
+    public async Task<IActionResult> RefreshSessionAsync(
         CancellationToken cancellationToken)
     {
         if (!Request.Cookies.TryGetValue(RefreshTokenCookieName, out var rawRefreshToken) ||
@@ -112,18 +129,20 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Revokes the current refresh token and clears both authentication cookies.
+    /// Revokes the current session (logs out) and clears both authentication cookies.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <remarks>
-    /// Always returns 204, even if there was no valid refresh token to revoke,
-    /// so the client can treat logout as "now logged out" either way.
+    /// Always returns 204, even if the refresh token cookie was missing or already
+    /// revoked, so the client can treat this as "now logged out" either way.
     /// </remarks>
-    /// <response code="204">Logged out.</response>
-    [HttpPost("logout")]
+    /// <response code="204">Session revoked and cookies cleared.</response>
+    /// <response code="401">Missing or invalid access token.</response>
+    [HttpDelete("sessions/current")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RevokeSessionAsync(CancellationToken cancellationToken)
     {
         if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var rawRefreshToken) &&
             !string.IsNullOrWhiteSpace(rawRefreshToken))
@@ -137,21 +156,21 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Revokes every active refresh token for the current user, ending all
-    /// sessions on every device and clearing cookies.
+    /// Revokes every active session (refresh token) for the current user, ending all
+    /// sessions on every device, and clears this device's cookies.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <remarks>
-    /// Requires a valid access token. Only clears this device's cookies
-    /// directly; other devices simply fail their next refresh attempt.
+    /// Requires a valid access token. Cookies are only cleared on this device;
+    /// other devices are not notified and will simply fail their next refresh attempt.
     /// </remarks>
     /// <response code="204">All sessions revoked.</response>
     /// <response code="401">Missing or invalid access token.</response>
-    [HttpPost("logout-all")]
+    [HttpDelete("sessions")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> LogoutAllAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> RevokeAllSessionsAsync(CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 

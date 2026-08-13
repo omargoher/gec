@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace GEC.API.Controllers;
 
 /// <summary>
-/// Handles email verification and OTP code resending requests.
+/// Confirms a user's email address via a one-time verification code (OTP).
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/email-verification")]
 [Tags("Email Verification")]
 public class EmailVerificationController : ControllerBase
 {
@@ -21,40 +21,54 @@ public class EmailVerificationController : ControllerBase
     }
 
     /// <summary>
-    /// Verifies a user's email using a one-time verification code (OTP).
+    /// Confirms an email address using a previously issued verification code.
     /// </summary>
     /// <param name="request">The email and the verification code.</param>
-    /// <returns>No content on success.</returns>
-    /// <response code="204">Email verified successfully.</response>
-    /// <response code="400">Invalid verification code, or email is already verified.</response>
-    /// <response code="404">User with the specified email was not found.</response>
-    [HttpPost("verify")]
+    /// <param name="cancellationToken"></param>
+    /// <remarks>
+    /// On success, the user's <c>EmailConfirmed</c> flag is set to true. There is no
+    /// request body echo or resource representation to return, hence 204.
+    /// </remarks>
+    /// <response code="204">Email confirmed successfully.</response>
+    /// <response code="400">
+    /// The code is invalid, expired, already used, or the max attempt count was
+    /// exceeded (which also discards the code, requiring a new one to be requested);
+    /// or the email was already verified.
+    /// </response>
+    /// <response code="404">No user exists with the specified email.</response>
+    [HttpPut]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> VerifyAsync([FromBody] VerifyEmailRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ConfirmEmailAsync(
+        [FromBody] VerifyEmailRequest request,
+        CancellationToken cancellationToken = default)
     {
         await _emailVerificationService.VerifyEmailAsync(request, cancellationToken);
+
         return NoContent();
     }
 
     /// <summary>
-    /// Resends a verification OTP code to the user's email address.
+    /// Issues a new verification code and emails it to the user
     /// </summary>
     /// <param name="request">The email to receive the verification code.</param>
-    /// <returns>No content on success.</returns>
-    /// <response code="204">Verification code sent successfully.</response>
-    /// <response code="400">Email is already verified.</response>
-    /// <response code="404">User with the specified email was not found.</response>
-    [HttpPost("resend")]
+    /// <param name="cancellationToken"></param>
+    /// <response code="202">A new verification code was generated and emailed.</response>
+    /// <response code="400">The email is already verified.</response>
+    /// <response code="404">No user exists with the specified email.</response>
+    [HttpPost("codes")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ResendOtpAsync([FromBody] SendVerificationCodeRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateVerificationCodeAsync(
+        [FromBody] SendVerificationCodeRequest request,
+        CancellationToken cancellationToken = default)
     {
         await _emailVerificationService.SendVerificationCodeAsync(request, cancellationToken);
-        return NoContent();
+
+        return Accepted();
     }
 }
