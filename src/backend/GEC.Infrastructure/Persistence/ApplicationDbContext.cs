@@ -13,6 +13,13 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<TestUser> TestUsers { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        optionsBuilder.UseSnakeCaseNamingConvention();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

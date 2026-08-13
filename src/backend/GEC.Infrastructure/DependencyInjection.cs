@@ -40,6 +40,7 @@ public static class DependencyInjection
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorCodesToAdd: null);
                 npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+                npgsql.MigrationsHistoryTable("__ef_migrations_history_app");
             }));
 
         services.AddMemoryCache();
@@ -66,7 +67,7 @@ public static class DependencyInjection
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorCodesToAdd: null);
                 npgsql.MigrationsAssembly(typeof(AppIdentityDbContext).Assembly.FullName);
-                npgsql.MigrationsHistoryTable("__EFMigrationsHistory_Identity");
+                npgsql.MigrationsHistoryTable("__ef_migrations_history_identit");
             }));
 
         services.AddDataProtection();

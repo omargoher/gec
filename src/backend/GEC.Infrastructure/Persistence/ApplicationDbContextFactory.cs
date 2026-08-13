@@ -19,7 +19,11 @@ public class ApplicationDbContextFactory
 
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
-        optionsBuilder.UseNpgsql(connectionString);
+        optionsBuilder.UseNpgsql(connectionString, npgsql =>
+        {
+            npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+            npgsql.MigrationsHistoryTable("__ef_migrations_history_app");
+        });
 
         return new ApplicationDbContext(optionsBuilder.Options);
     }
