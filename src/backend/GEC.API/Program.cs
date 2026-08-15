@@ -48,6 +48,7 @@ await app.Services.ApplyMigrationsAsync();
 
 // Seed default data
 await app.Services.SeedRolesAsync();
+await app.Services.SeedAdminAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

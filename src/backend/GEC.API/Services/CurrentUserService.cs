@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GEC.ApplicationCore.Exceptions;
 using GEC.ApplicationCore.Interfaces.Identity;
+using GEC.ApplicationCore.Interfaces.Persistence;
 using GEC.ApplicationCore.Interfaces.Repositories;
 
 namespace GEC.API.Services;
@@ -8,13 +9,14 @@ namespace GEC.API.Services;
 public class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ICustomerRepository _customerRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private Guid? _cachedCustomerId;
+    private Guid? _cachedAdminId;
 
-    public CurrentUserService(IHttpContextAccessor httpContextAccessor, ICustomerRepository customerRepository)
+    public CurrentUserService(IHttpContextAccessor httpContextAccessor, IUnitOfWork unitOfWork)
     {
         _httpContextAccessor = httpContextAccessor;
-        _customerRepository = customerRepository;
+        _unitOfWork = unitOfWork;
     }
     private ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
 
@@ -31,12 +33,28 @@ public class CurrentUserService : ICurrentUserService
             return _cachedCustomerId.Value;
         }
 
-        var customer = await _customerRepository.GetByIdentityUserIdAsync(UserId, CancellationToken.None);
+        var customer = await _unitOfWork.Customer.GetByIdentityUserIdAsync(UserId, CancellationToken.None);
 
         if (customer is null)
             throw new NotFoundException("Customer");
 
         _cachedCustomerId = customer.Id;
         return customer.Id;
+    }
+
+    public async Task<Guid> GetAdminIdAsync(CancellationToken cancellationToken = default)
+    {
+        if (_cachedAdminId.HasValue)
+        {
+            return _cachedAdminId.Value;
+        }
+
+        var admin = await _unitOfWork.Admin.GetByIdentityUserIdAsync(UserId, CancellationToken.None);
+
+        if (admin is null)
+            throw new NotFoundException("Admin");
+
+        _cachedAdminId = admin.Id;
+        return admin.Id;
     }
 }
