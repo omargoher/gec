@@ -6,6 +6,8 @@ namespace GEC.ApplicationCore.Interfaces.Persistence;
 public interface IUnitOfWork : IDisposable
 {
     ITestUserRepository TestUser { get; }
+    IAdminRepository Admin { get; }
+    ICustomerRepository Customer { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

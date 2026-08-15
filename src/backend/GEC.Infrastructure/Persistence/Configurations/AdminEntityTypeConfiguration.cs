@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GEC.Infrastructure.Persistence.Configurations;
 
-public class CustomerEntityTypeConfiguration : IEntityTypeConfiguration<Customer>
+public class AdminEntityTypeConfiguration : IEntityTypeConfiguration<Admin>
 {
-    public void Configure(EntityTypeBuilder<Customer> builder)
+    public void Configure(EntityTypeBuilder<Admin> builder)
     {
         builder.HasKey(c => c.Id);
 
