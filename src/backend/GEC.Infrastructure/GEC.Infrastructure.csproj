@@ -34,7 +34,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Persistence\Migrations\" />
-	  <Folder Include="Seeders\" />
 		<None Update="Templates\**\*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

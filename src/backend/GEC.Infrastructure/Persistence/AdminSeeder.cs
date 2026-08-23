@@ -39,6 +39,13 @@ public static class AdminSeeder
                 throw new InvalidOperationException($"Failed to seed admin user: {errors}");
             }
 
+            result = await userManager.AddToRoleAsync(adminUser, "Admin");
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to seed admin user: {errors}");
+            }
+
             unitOfWork.Admin.Add(new Admin
             {
                 IdentityUserId = adminUser.Id,

@@ -16,10 +16,12 @@ public class UnitOfWork : IUnitOfWork
         TestUser = new TestUserRepository(_context);
         Admin = new AdminRepository(_context);
         Customer = new CustomerRepository(_context);
+        Category = new CategoryRepository(_context);
     }
     public ITestUserRepository TestUser { get; private set; }
     public IAdminRepository Admin { get; private set; }
     public ICustomerRepository Customer { get; private set; }
+    public ICategoryRepository Category { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
