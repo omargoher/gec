@@ -8,6 +8,8 @@ public interface IAuthenticationService
         RegisterRequest request,
         CancellationToken cancellationToken = default);
 
+    public Task<AppUserDto> GetUserAsync(string userId, CancellationToken cancellationToken = default);
+
     public Task<AuthResponse>
         LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
 

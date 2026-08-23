@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GEC.ApplicationCore.DTOs.Auth;
 using GEC.ApplicationCore.Exceptions;
+using GEC.ApplicationCore.Interfaces.Identity;
 using GEC.ApplicationCore.Interfaces.Services;
 using GEC.ApplicationCore.Options;
 using Microsoft.AspNetCore.Authorization;
@@ -29,13 +30,31 @@ public class AuthController : ControllerBase
 
     private readonly IAuthenticationService _authenticationService;
     private readonly JwtOptions _jwtOptions;
+    private readonly ICurrentUserService _currentUserService;
 
     public AuthController(
         IAuthenticationService authenticationService,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        ICurrentUserService currentUserService)
     {
         _authenticationService = authenticationService;
         _jwtOptions = jwtOptions.Value;
+        _currentUserService = currentUserService;
+    }
+
+    [HttpPost("me")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AppUserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AppUserDto>> MeAsync(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+
+        if (userId == null)
+            throw new NotFoundException("user");
+
+        var result = await _authenticationService.GetUserAsync(userId, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>

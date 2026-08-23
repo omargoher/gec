@@ -47,6 +47,16 @@ public class AuthenticationService : IAuthenticationService
         _context = context;
     }
 
+    public async Task<AppUserDto> GetUserAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _identityService.FindByIdAsync(userId);
+        if (user == null)
+        {
+            throw new NotFoundException("user");
+        }
+        return user;
+    }
+
     public async Task<AuthResponse> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default)
