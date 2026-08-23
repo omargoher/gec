@@ -1,5 +1,4 @@
 using GEC.Domain.Entities;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace GEC.Infrastructure.Persistence;
@@ -17,6 +16,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<Address> Addresses { get; set; }
 
     public DbSet<Category> Categories { get; set; }
+
+    public DbSet<ProductCategory> ProductsCategories { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<ProductVariant> ProductVariants { get; set; }
+    public DbSet<AttributeDefinition> AttributeDefinitions { get; set; }
+    public DbSet<AttributeValue> AttributeValues { get; set; }
+    public DbSet<ProductAttribute> ProductAttributes { get; set; }
+    public DbSet<VariantAttributeValue> VariantAttributeValues { get; set; }
+    public DbSet<ProductSpecification> ProductSpecifications { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

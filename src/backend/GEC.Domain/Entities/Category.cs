@@ -16,6 +16,5 @@ public class Category : BaseEntity
 
     public Category? Parent { get; set; }
     public ICollection<Category> Children { get; set; } = new List<Category>();
-
-    // Products
+    public ICollection<ProductCategory> ProductCategories { get; set; } = new List<ProductCategory>();
 }
