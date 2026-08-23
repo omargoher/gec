@@ -11,7 +11,7 @@ public interface IAttributeService
 {
     Task<AttributeDefinitionResponse> AddAttributeDefinitionAsync(CreateAttributeDefinitionRequest request, CancellationToken cancellationToken = default);
     Task<AttributeDefinitionResponse> RemoveAttributeDefinitionAsync(Guid attributeId, CancellationToken cancellationToken = default);
-    Task<PagedResult<AttributeDefinitionResponse>> GetAttributeDefinitionsAsync(GetAttributeDefinitionsRequest request, CancellationToken cancellationToken = default);
+    Task<PagedResult<AttributeDefinitionResponse>> GetAttributeDefinitionsAsync(AttributeDefinitionFilterParams filterParams, CancellationToken cancellationToken = default);
 
     Task<AttributeValueResponse> AddAttributeValueAsync(Guid attributeId, CreateAttributeValueRequest request, CancellationToken cancellationToken = default);
     Task<AttributeValueResponse> RemoveAttributeValueAsync(Guid attributeId, Guid valueId, CancellationToken cancellationToken = default);

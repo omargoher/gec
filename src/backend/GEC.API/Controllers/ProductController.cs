@@ -44,10 +44,10 @@ public class ProductController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<ProductListItemResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<ProductListItemResponse>>> GetAllAsync(
-        [FromQuery] GetProductsRequest request,
+        [FromQuery] ProductFilterParams filterParams,
         CancellationToken cancellationToken = default)
     {
-        var result = await _productService.GetAllProductsAsync(request, cancellationToken);
+        var result = await _productService.GetAllProductsAsync(filterParams, cancellationToken);
         return Ok(result);
     }
 
@@ -295,7 +295,7 @@ public class ProductController : ControllerBase
         [FromBody] ChangeVariantStatusRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _productService.ChangeVariantStatusAsync(productId,variantId, request, cancellationToken);
+        var result = await _productService.ChangeVariantStatusAsync(productId, variantId, request, cancellationToken);
         return Ok(result);
     }
 

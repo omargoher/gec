@@ -7,5 +7,5 @@ namespace GEC.ApplicationCore.Interfaces.Repositories;
 public interface IAttributeDefinitionRepository : IBaseRepository<AttributeDefinition>
 {
     Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default);
-    Task<PagedResult<AttributeDefinitionResponse>> GetPagedAsync(GetAttributeDefinitionsRequest request, CancellationToken cancellationToken = default);
+    Task<PagedResult<AttributeDefinitionResponse>> GetPagedAsync(AttributeDefinitionFilterParams filterParams, CancellationToken cancellationToken = default);
 }

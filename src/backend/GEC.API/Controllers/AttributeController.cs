@@ -54,10 +54,10 @@ public class AttributeController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AttributeDefinitionResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<AttributeDefinitionResponse>>> GetAllAsync(
-        [FromQuery] GetAttributeDefinitionsRequest request,
+        [FromQuery] AttributeDefinitionFilterParams filterParams,
         CancellationToken cancellationToken = default)
     {
-        var result = await _attributeService.GetAttributeDefinitionsAsync(request, cancellationToken);
+        var result = await _attributeService.GetAttributeDefinitionsAsync(filterParams, cancellationToken);
         return Ok(result);
     }
 

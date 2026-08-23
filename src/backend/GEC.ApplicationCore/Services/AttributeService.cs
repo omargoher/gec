@@ -54,8 +54,8 @@ public class AttributeService : IAttributeService
     }
 
     public async Task<PagedResult<AttributeDefinitionResponse>> GetAttributeDefinitionsAsync(
-        GetAttributeDefinitionsRequest request, CancellationToken cancellationToken = default)
-        => await _unitOfWork.AttributeDefinitions.GetPagedAsync(request, cancellationToken);
+        AttributeDefinitionFilterParams filterParams, CancellationToken cancellationToken = default)
+        => await _unitOfWork.AttributeDefinitions.GetPagedAsync(filterParams, cancellationToken);
 
     public async Task<AttributeValueResponse> AddAttributeValueAsync(
         Guid attributeId, CreateAttributeValueRequest request, CancellationToken cancellationToken = default)

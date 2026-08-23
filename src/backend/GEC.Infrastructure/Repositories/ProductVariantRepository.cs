@@ -35,30 +35,56 @@ public class ProductVariantRepository : BaseRepository<ProductVariant>, IProduct
 
     public async Task<VariantDetailsResponse?> GetDetailsByIdAsync(Guid variantId, CancellationToken cancellationToken = default)
     {
-        var variant = await _context.ProductVariants
-            .Include(v => v.AttributeValues).ThenInclude(av => av.Attribute)
-            .Include(v => v.AttributeValues).ThenInclude(av => av.AttributeValue)
-            .FirstOrDefaultAsync(v => v.Id == variantId, cancellationToken);
-
-        if (variant is null) return null;
-
-        var rowVersion = _context.Entry(variant).Property<uint>("xmin").CurrentValue;
-
-        return MapToDetails(variant, rowVersion);
+        return await _context.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.Id == variantId)
+            .Select(v => new VariantDetailsResponse
+            {
+                Id = v.Id,
+                ProductId = v.ProductId,
+                Sku = v.Sku,
+                PriceAmount = v.PriceAmount,
+                Currency = v.Currency,
+                Status = v.Status,
+                VariantSignature = v.VariantSignature,
+                CreatedAt = v.CreatedAt,
+                RowVersion = EF.Property<uint>(v, "xmin"),
+                Attributes = v.AttributeValues.Select(av => new VariantAttributeDto
+                {
+                    AttributeId = av.AttributeId,
+                    AttributeName = av.Attribute.Name,
+                    AttributeValueId = av.AttributeValueId,
+                    AttributeValue = av.AttributeValue.Value
+                }).ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<VariantDetailsResponse?> GetDetailsBySkuAsync(string sku, CancellationToken cancellationToken = default)
     {
-        var variant = await _context.ProductVariants
-            .Include(v => v.AttributeValues).ThenInclude(av => av.Attribute)
-            .Include(v => v.AttributeValues).ThenInclude(av => av.AttributeValue)
-            .FirstOrDefaultAsync(v => v.Sku == sku, cancellationToken);
-
-        if (variant is null) return null;
-
-        var rowVersion = _context.Entry(variant).Property<uint>("xmin").CurrentValue;
-
-        return MapToDetails(variant, rowVersion);
+        return await _context.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.Sku == sku)
+            .Select(v => new VariantDetailsResponse
+            {
+                Id = v.Id,
+                ProductId = v.ProductId,
+                Sku = v.Sku,
+                PriceAmount = v.PriceAmount,
+                Currency = v.Currency,
+                Status = v.Status,
+                VariantSignature = v.VariantSignature,
+                CreatedAt = v.CreatedAt,
+                RowVersion = EF.Property<uint>(v, "xmin"),
+                Attributes = v.AttributeValues.Select(av => new VariantAttributeDto
+                {
+                    AttributeId = av.AttributeId,
+                    AttributeName = av.Attribute.Name,
+                    AttributeValueId = av.AttributeValueId,
+                    AttributeValue = av.AttributeValue.Value
+                }).ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<List<VariantListItemResponse>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
@@ -75,25 +101,4 @@ public class ProductVariantRepository : BaseRepository<ProductVariant>, IProduct
                 Status = v.Status
             })
             .ToListAsync(cancellationToken);
-
-    public static VariantDetailsResponse MapToDetails(ProductVariant variant, uint rowVersion) =>
-        new()
-        {
-            Id = variant.Id,
-            ProductId = variant.ProductId,
-            Sku = variant.Sku,
-            PriceAmount = variant.PriceAmount,
-            Currency = variant.Currency,
-            Status = variant.Status,
-            VariantSignature = variant.VariantSignature,
-            CreatedAt = variant.CreatedAt,
-            RowVersion = rowVersion,
-            Attributes = variant.AttributeValues.Select(av => new VariantAttributeDto
-            {
-                AttributeId = av.AttributeId,
-                AttributeName = av.Attribute?.Name ?? string.Empty,
-                AttributeValueId = av.AttributeValueId,
-                AttributeValue = av.AttributeValue?.Value ?? string.Empty
-            }).ToList()
-        };
 }

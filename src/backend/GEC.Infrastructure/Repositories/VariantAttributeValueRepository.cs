@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GEC.Infrastructure.Repositories;
 
-public class VariantAttributeValueRepository : IVariantAttributeValueRepository
+public class VariantAttributeValueRepository : BaseRepository<VariantAttributeValue>, IVariantAttributeValueRepository
 {
     private readonly ApplicationDbContext _context;
 
-    public VariantAttributeValueRepository(ApplicationDbContext context)
+    public VariantAttributeValueRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
     }
@@ -34,9 +34,4 @@ public class VariantAttributeValueRepository : IVariantAttributeValueRepository
             .Where(v => v.VariantId == variantId)
             .ToListAsync(cancellationToken);
 
-    public void Add(VariantAttributeValue variantAttributeValue)
-        => _context.VariantAttributeValues.Add(variantAttributeValue);
-
-    public void Remove(VariantAttributeValue variantAttributeValue)
-        => _context.VariantAttributeValues.Remove(variantAttributeValue);
 }

@@ -55,7 +55,7 @@ public interface IProductService
     /// Changes variant lifecycle status. Draft→Active requires all required attributes assigned
     /// and a non-empty VariantSignature. Requires RowVersion.
     /// </summary>
-    Task<VariantResponse> ChangeVariantStatusAsync(Guid productId,Guid variantId, ChangeVariantStatusRequest request, CancellationToken cancellationToken = default);
+    Task<VariantResponse> ChangeVariantStatusAsync(Guid productId, Guid variantId, ChangeVariantStatusRequest request, CancellationToken cancellationToken = default);
 
     // --- Product Lifecycle (§3.3) ---
 
@@ -68,7 +68,7 @@ public interface IProductService
     // --- Read Operations (§5) ---
 
     Task<ProductDetailsResponse> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
-    Task<PagedResult<ProductListItemResponse>> GetAllProductsAsync(GetProductsRequest request, CancellationToken cancellationToken = default);
+    Task<PagedResult<ProductListItemResponse>> GetAllProductsAsync(ProductFilterParams filterParams, CancellationToken cancellationToken = default);
     Task<List<VariantListItemResponse>> GetAllVariantsByProductIdAsync(Guid productId, CancellationToken cancellationToken = default);
     Task<VariantDetailsResponse> GetVariantByIdAsync(Guid variantId, CancellationToken cancellationToken = default);
     Task<VariantDetailsResponse> GetVariantBySkuAsync(string sku, CancellationToken cancellationToken = default);

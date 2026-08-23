@@ -5,6 +5,7 @@ using GEC.Domain.Entities;
 using GEC.Domain.Enums;
 using GEC.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using GEC.Infrastructure.Extensions;
 
 namespace GEC.Infrastructure.Repositories;
 
@@ -69,25 +70,13 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
     //Get a page of products from the database,
     //optionally filter them, count how many match,
     //then return only the products needed for the current page.
-    public async Task<PagedResult<ProductListItemResponse>> GetPagedAsync(GetProductsRequest request, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProductListItemResponse>> GetPagedAsync(ProductFilterParams filterParams, CancellationToken cancellationToken = default)
     {
-        var query = _context.Products.AsNoTracking();
-
-        if (request.Status.HasValue)
-            query = query.Where(p => p.Status == request.Status.Value);
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            var search = request.Search.ToLower();
-            query = query.Where(p => p.Name.ToLower().Contains(search) || p.Slug.ToLower().Contains(search));
-        }
-
-        var total = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .OrderBy(p => p.Name)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
+        return await _context.Products
+            .AsNoTracking()
+            .Search(filterParams.SearchTerm)
+            .FilterByStatus(filterParams.Status)
+            .ApplySort(filterParams.SortBy, filterParams.SortOrder)
             .Select(p => new ProductListItemResponse
             {
                 Id = p.Id,
@@ -95,14 +84,6 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
                 Slug = p.Slug,
                 Status = p.Status
             })
-            .ToListAsync(cancellationToken);
-
-        return new PagedResult<ProductListItemResponse>
-        {
-            Data = items,
-            PageNumber = request.PageNumber,
-            PageSize = request.PageSize,
-            TotalRecords = total
-        };
+            .ToPagedListAsync(filterParams.Pagination.PageNumber, filterParams.Pagination.PageSize, cancellationToken);
     }
 }

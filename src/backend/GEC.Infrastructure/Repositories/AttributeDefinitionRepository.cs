@@ -4,6 +4,7 @@ using GEC.ApplicationCore.Interfaces.Repositories;
 using GEC.Domain.Entities;
 using GEC.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using GEC.Infrastructure.Extensions;
 
 namespace GEC.Infrastructure.Repositories;
 
@@ -20,30 +21,13 @@ public class AttributeDefinitionRepository : BaseRepository<AttributeDefinition>
         => await _context.AttributeDefinitions.AnyAsync(
             a => a.Name.ToLower() == name.ToLower(), cancellationToken);
 
-    public async Task<PagedResult<AttributeDefinitionResponse>> GetPagedAsync(GetAttributeDefinitionsRequest request, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<AttributeDefinitionResponse>> GetPagedAsync(AttributeDefinitionFilterParams filterParams, CancellationToken cancellationToken = default)
     {
-        var query = _context.AttributeDefinitions.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            var search = request.Search.ToLower();
-            query = query.Where(a => a.Name.ToLower().Contains(search));
-        }
-
-        var total = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderBy(a => a.Name)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
+        return await _context.AttributeDefinitions
+            .AsNoTracking()
+            .Search(filterParams.SearchTerm)
+            .ApplySort(filterParams.SortBy, filterParams.SortOrder)
             .Select(a => new AttributeDefinitionResponse { Id = a.Id, Name = a.Name })
-            .ToListAsync(cancellationToken);
-
-        return new PagedResult<AttributeDefinitionResponse>
-        {
-            Data = items,
-            PageNumber = request.PageNumber,
-            PageSize = request.PageSize,
-            TotalRecords = total
-        };
+            .ToPagedListAsync(filterParams.Pagination.PageNumber, filterParams.Pagination.PageSize, cancellationToken);
     }
 }

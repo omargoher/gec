@@ -101,7 +101,7 @@ public class ProductService : IProductService
             ProductId = productId,
             Name = request.Name.Trim(),
             Value = request.Value.Trim()
-        };  
+        };
 
         _unitOfWork.ProductSpecifications.Add(spec);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -227,63 +227,63 @@ public class ProductService : IProductService
         }).ToList());
     }
 
-  public async Task<VariantResponse> ReassignVariantAttributeValueAsync(Guid productId, Guid variantId, ReassignVariantAttributeValueRequest request, CancellationToken cancellationToken = default) 
-{ 
-    var variant = await _unitOfWork.ProductVariants.GetByIdAsync(variantId, cancellationToken) 
-        ?? throw new NotFoundException("Variant", variantId); 
- 
-    if (variant.ProductId != productId) 
-        throw new InvalidRequestException("Variant does not belong to the specified product."); 
- 
-    var currentRowVersion = _unitOfWork.GetRowVersion(variant); 
-    if (currentRowVersion != request.RowVersion) 
-        throw new ConcurrencyException("Variant"); 
- 
-    if (!await _unitOfWork.ProductAttributes.ExistsAsync(productId, request.AttributeId, cancellationToken)) 
-        throw new InvalidRequestException("The attribute is not enabled for this product."); 
- 
-    // Single fetch — this list and existingVav are the same objects we'll mutate and score. 
-    var currentValues = await _unitOfWork.VariantAttributeValues.GetByVariantIdAsync(variantId, cancellationToken); 
-    var existingVav = currentValues.FirstOrDefault(v => v.AttributeId == request.AttributeId) 
-        ?? throw new InvalidRequestException("Variant does not have a value assigned for this attribute. Use Assign instead."); 
- 
-    if (existingVav.AttributeValueId == request.NewAttributeValueId) 
-    { 
-        
-        return MapToVariantResponse(variant, currentValues.Select(v => new VariantAttributeDto 
-        { 
-            AttributeId = v.AttributeId, 
-            AttributeValueId = v.AttributeValueId 
-        }).ToList()); 
-    } 
- 
-    var newAttrValue = await _unitOfWork.AttributeValues.GetByIdAsync(request.NewAttributeValueId, cancellationToken) 
-        ?? throw new NotFoundException("Attribute value", request.NewAttributeValueId); 
- 
-    if (newAttrValue.AttributeId != request.AttributeId) 
-        throw new InvalidRequestException("The new attribute value does not belong to the specified attribute."); 
- 
-    existingVav.AttributeValueId = request.NewAttributeValueId; 
- 
-    // No second query — currentValues already reflects the mutation via existingVav. 
-    var newSignature = ComputeSignature(currentValues); 
- 
-    if (newSignature is not null && 
-        await _unitOfWork.ProductVariants.ExistsBySignatureAsync(productId, newSignature, variantId, cancellationToken)) 
-        throw new ConflictException("Variant attribute combination"); 
-    
- 
-    variant.VariantSignature = newSignature; 
-    _unitOfWork.ProductVariants.Update(variant); 
-    
-    await _unitOfWork.SaveChangesAsync(cancellationToken); 
- 
-    return MapToVariantResponse(variant, currentValues.Select(v => new VariantAttributeDto 
-    { 
-        AttributeId = v.AttributeId, 
-        AttributeValueId = v.AttributeValueId 
-    }).ToList()); 
-}
+    public async Task<VariantResponse> ReassignVariantAttributeValueAsync(Guid productId, Guid variantId, ReassignVariantAttributeValueRequest request, CancellationToken cancellationToken = default)
+    {
+        var variant = await _unitOfWork.ProductVariants.GetByIdAsync(variantId, cancellationToken)
+            ?? throw new NotFoundException("Variant", variantId);
+
+        if (variant.ProductId != productId)
+            throw new InvalidRequestException("Variant does not belong to the specified product.");
+
+        var currentRowVersion = _unitOfWork.GetRowVersion(variant);
+        if (currentRowVersion != request.RowVersion)
+            throw new ConcurrencyException("Variant");
+
+        if (!await _unitOfWork.ProductAttributes.ExistsAsync(productId, request.AttributeId, cancellationToken))
+            throw new InvalidRequestException("The attribute is not enabled for this product.");
+
+        // Single fetch — this list and existingVav are the same objects we'll mutate and score. 
+        var currentValues = await _unitOfWork.VariantAttributeValues.GetByVariantIdAsync(variantId, cancellationToken);
+        var existingVav = currentValues.FirstOrDefault(v => v.AttributeId == request.AttributeId)
+            ?? throw new InvalidRequestException("Variant does not have a value assigned for this attribute. Use Assign instead.");
+
+        if (existingVav.AttributeValueId == request.NewAttributeValueId)
+        {
+
+            return MapToVariantResponse(variant, currentValues.Select(v => new VariantAttributeDto
+            {
+                AttributeId = v.AttributeId,
+                AttributeValueId = v.AttributeValueId
+            }).ToList());
+        }
+
+        var newAttrValue = await _unitOfWork.AttributeValues.GetByIdAsync(request.NewAttributeValueId, cancellationToken)
+            ?? throw new NotFoundException("Attribute value", request.NewAttributeValueId);
+
+        if (newAttrValue.AttributeId != request.AttributeId)
+            throw new InvalidRequestException("The new attribute value does not belong to the specified attribute.");
+
+        existingVav.AttributeValueId = request.NewAttributeValueId;
+
+        // No second query — currentValues already reflects the mutation via existingVav. 
+        var newSignature = ComputeSignature(currentValues);
+
+        if (newSignature is not null &&
+            await _unitOfWork.ProductVariants.ExistsBySignatureAsync(productId, newSignature, variantId, cancellationToken))
+            throw new ConflictException("Variant attribute combination");
+
+
+        variant.VariantSignature = newSignature;
+        _unitOfWork.ProductVariants.Update(variant);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToVariantResponse(variant, currentValues.Select(v => new VariantAttributeDto
+        {
+            AttributeId = v.AttributeId,
+            AttributeValueId = v.AttributeValueId
+        }).ToList());
+    }
 
     public async Task<VariantResponse> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default)
     {
@@ -450,8 +450,8 @@ public class ProductService : IProductService
         return result;
     }
 
-    public async Task<PagedResult<ProductListItemResponse>> GetAllProductsAsync(GetProductsRequest request, CancellationToken cancellationToken = default)
-        => await _unitOfWork.Products.GetPagedAsync(request, cancellationToken);
+    public async Task<PagedResult<ProductListItemResponse>> GetAllProductsAsync(ProductFilterParams filterParams, CancellationToken cancellationToken = default)
+        => await _unitOfWork.Products.GetPagedAsync(filterParams, cancellationToken);
 
     public async Task<List<VariantListItemResponse>> GetAllVariantsByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
@@ -532,6 +532,7 @@ public class ProductService : IProductService
         if (variant.Status == ProductVariantStatus.Discontinued)
             throw new InvalidRequestException("Cannot change price of a discontinued variant.");
     }
+
     // ─── Lifecycle Validation ──────────────────────────────────────────────────
 
     private static void ValidateProductStatusTransition(ProductStatus current, ProductStatus next)

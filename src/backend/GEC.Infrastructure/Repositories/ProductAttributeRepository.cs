@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GEC.Infrastructure.Repositories;
 
-public class ProductAttributeRepository : IProductAttributeRepository
+public class ProductAttributeRepository : BaseRepository<ProductAttribute>, IProductAttributeRepository
 {
     private readonly ApplicationDbContext _context;
 
-    public ProductAttributeRepository(ApplicationDbContext context)
+    public ProductAttributeRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
     }
@@ -46,9 +46,4 @@ public class ProductAttributeRepository : IProductAttributeRepository
             .Where(pa => pa.ProductId == productId && pa.IsRequired)
             .ToListAsync(cancellationToken);
 
-    public void Add(ProductAttribute productAttribute)
-        => _context.ProductAttributes.Add(productAttribute);
-
-    public void Remove(ProductAttribute productAttribute)
-        => _context.ProductAttributes.Remove(productAttribute);
 }
