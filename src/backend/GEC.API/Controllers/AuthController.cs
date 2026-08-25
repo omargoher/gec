@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GEC.API.Services;
 using GEC.ApplicationCore.DTOs.Auth;
 using GEC.ApplicationCore.Exceptions;
 using GEC.ApplicationCore.Interfaces.Identity;
@@ -27,19 +28,26 @@ public class AuthController : ControllerBase
 {
     private const string AccessTokenCookieName = "accessToken";
     private const string RefreshTokenCookieName = "refreshToken";
+    private const string CartCookieName = "cart_id";
 
     private readonly IAuthenticationService _authenticationService;
     private readonly JwtOptions _jwtOptions;
     private readonly ICurrentUserService _currentUserService;
-
+    private readonly ICartResolver _cartResolver;
+    private readonly ICartService _cartService;
+    
     public AuthController(
         IAuthenticationService authenticationService,
         IOptions<JwtOptions> jwtOptions,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ICartService cartService,
+        ICartResolver cartResolver)
     {
         _authenticationService = authenticationService;
         _jwtOptions = jwtOptions.Value;
         _currentUserService = currentUserService;
+        _cartResolver = cartResolver;
+        _cartService = cartService;
     }
 
     [HttpPost("me")]
@@ -99,6 +107,16 @@ public class AuthController : ControllerBase
 
         SetAccessTokenCookie(result.AccessToken);
         SetRefreshTokenCookie(result.RefreshToken);
+        
+        var guestCartId = GetCartIdFromCookie();
+        var customerId = await _currentUserService.GetCustomerIdByEmailAsync(request.Email, cancellationToken);
+        if (guestCartId is not null )
+        {
+            var mergedCartId = await _cartService.MergeGuestCartIntoCustomerAsync(
+                guestCartId.Value, customerId, cancellationToken);
+
+            SetCartCookie(mergedCartId);
+        }
 
         return NoContent();
     }
@@ -220,6 +238,26 @@ public class AuthController : ControllerBase
         Response.Cookies.Delete(AccessTokenCookieName, new CookieOptions
         {
             Path = "/"
+        });
+    }
+    
+    private Guid? GetCartIdFromCookie()
+    {
+        var cartCookie = Request.Cookies[CartCookieName];
+
+        if (Guid.TryParse(cartCookie, out var id)) return id;
+
+        return null;
+    }
+    
+    private void SetCartCookie(Guid cartId)
+    {
+        Response.Cookies.Append(CartCookieName, cartId.ToString(), new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(30)
         });
     }
 }

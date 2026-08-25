@@ -45,8 +45,7 @@ public class ProductService : IProductService
         var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Product", productId);
 
-        if (product.Status == ProductStatus.Archived)
-            throw new InvalidRequestException("Cannot modify an archived product.");
+        EnsureProductNotArchived(product);
 
         var attribute = await _unitOfWork.AttributeDefinitions.GetByIdAsync(request.AttributeId, cancellationToken)
             ?? throw new NotFoundException("Attribute definition", request.AttributeId);
@@ -75,8 +74,9 @@ public class ProductService : IProductService
 
     public async Task RemoveProductAttributeAsync(Guid productId, Guid attributeId, CancellationToken cancellationToken = default)
     {
-        _ = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
 
         var productAttribute = await _unitOfWork.ProductAttributes.GetAsync(productId, attributeId, cancellationToken)
             ?? throw new NotFoundException("Product attribute");
@@ -93,8 +93,9 @@ public class ProductService : IProductService
 
     public async Task<ProductSpecificationResponse> AddProductSpecificationAsync(Guid productId, AddProductSpecificationRequest request, CancellationToken cancellationToken = default)
     {
-        _ = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
 
         var spec = new ProductSpecification
         {
@@ -122,8 +123,7 @@ public class ProductService : IProductService
         var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Product", productId);
 
-        if (product.Status == ProductStatus.Archived)
-            throw new InvalidRequestException("Cannot add a variant to an archived product.");
+        EnsureProductNotArchived(product);
 
         var sku = NormalizeSku(request.Sku);
 
@@ -148,8 +148,9 @@ public class ProductService : IProductService
 
     public async Task<VariantResponse> RemoveVariantAsync(Guid productId, Guid variantId, CancellationToken cancellationToken = default)
     {
-        _ = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
 
         var variant = await _unitOfWork.ProductVariants.GetByIdAsync(variantId, cancellationToken)
             ?? throw new NotFoundException("Variant", variantId);
@@ -165,6 +166,17 @@ public class ProductService : IProductService
             }).ToList();
 
         _unitOfWork.ProductVariants.Remove(variant);
+
+        if (variant.Status == ProductVariantStatus.Active && product.Status == ProductStatus.Active)
+        {
+            var variants = await _unitOfWork.ProductVariants.GetByProductIdAsync(productId, cancellationToken);
+            if (variants.Count(v => v.Status == ProductVariantStatus.Active) <= 1)
+            {
+                product.Status = ProductStatus.Inactive;
+                _unitOfWork.Products.Update(product);
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return MapToVariantResponse(variant, attributeDtos);
@@ -177,6 +189,10 @@ public class ProductService : IProductService
 
         if (variant.ProductId != productId)
             throw new InvalidRequestException("Variant does not belong to the specified product.");
+
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+            ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
 
         var currentRowVersion = _unitOfWork.GetRowVersion(variant);
         if (currentRowVersion != request.RowVersion)
@@ -234,6 +250,10 @@ public class ProductService : IProductService
 
         if (variant.ProductId != productId)
             throw new InvalidRequestException("Variant does not belong to the specified product.");
+
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+            ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
 
         var currentRowVersion = _unitOfWork.GetRowVersion(variant);
         if (currentRowVersion != request.RowVersion)
@@ -293,6 +313,10 @@ public class ProductService : IProductService
         if (variant.ProductId != productId)
             throw new InvalidRequestException("Variant does not belong to the specified product.");
 
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+            ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
+
         var currentRowVersion = _unitOfWork.GetRowVersion(variant);
         if (currentRowVersion != request.RowVersion)
             throw new ConcurrencyException("Variant");
@@ -333,6 +357,10 @@ public class ProductService : IProductService
         if (variant.ProductId != productId)
             throw new InvalidRequestException("Variant does not belong to the specified product.");
 
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+            ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
+
         var currentRowVersion = _unitOfWork.GetRowVersion(variant);
         if (currentRowVersion != request.RowVersion)
             throw new ConcurrencyException("Variant");
@@ -361,6 +389,11 @@ public class ProductService : IProductService
 
         if (variant.ProductId != productId)
             throw new InvalidRequestException("Variant does not belong to the specified product.");
+
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+            ?? throw new NotFoundException("Product", productId);
+        EnsureProductNotArchived(product);
+        
         var currentRowVersion = _unitOfWork.GetRowVersion(variant);
         if (currentRowVersion != request.RowVersion)
             throw new ConcurrencyException("Variant");
@@ -382,6 +415,16 @@ public class ProductService : IProductService
             if (missing.Count > 0)
                 throw new InvalidRequestException(
                     $"Cannot activate variant: {missing.Count} required attribute(s) not yet assigned.");
+        }
+
+        if (variant.Status == ProductVariantStatus.Active && request.Status != ProductVariantStatus.Active && product.Status == ProductStatus.Active)
+        {
+            var variants = await _unitOfWork.ProductVariants.GetByProductIdAsync(productId, cancellationToken);
+            if (variants.Count(v => v.Status == ProductVariantStatus.Active) <= 1)
+            {
+                product.Status = ProductStatus.Inactive;
+                _unitOfWork.Products.Update(product);
+            }
         }
 
         variant.Status = request.Status;
@@ -436,6 +479,21 @@ public class ProductService : IProductService
 
         product.Status = ProductStatus.Archived;
         _unitOfWork.Products.Update(product);
+
+        var variants = await _unitOfWork.ProductVariants.GetByProductIdAsync(productId, cancellationToken);
+        foreach (var v in variants)
+        {
+            if (v.Status != ProductVariantStatus.Discontinued)
+            {
+                var variantEntity = await _unitOfWork.ProductVariants.GetByIdAsync(v.Id, cancellationToken);
+                if (variantEntity != null)
+                {
+                    variantEntity.Status = ProductVariantStatus.Discontinued;
+                    _unitOfWork.ProductVariants.Update(variantEntity);
+                }
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return MapToProductResponse(product);
@@ -486,6 +544,12 @@ public class ProductService : IProductService
 
     private static string NormalizeSlug(string slug)
         => slug.Trim().ToLowerInvariant();
+
+    private static void EnsureProductNotArchived(Product product)
+    {
+        if (product.Status == ProductStatus.Archived)
+            throw new InvalidRequestException("Cannot modify an archived product or its variants.");
+    }
 
     private static string NormalizeSku(string sku)
         => sku.Trim().ToUpperInvariant();

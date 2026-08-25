@@ -9,7 +9,7 @@ namespace GEC.Infrastructure.Repositories;
 
 public class CustomerRepository : BaseRepository<Customer>, ICustomerRepository
 {
-    public readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _context;
 
     public CustomerRepository(ApplicationDbContext context) : base(context)
     {
@@ -21,5 +21,11 @@ public class CustomerRepository : BaseRepository<Customer>, ICustomerRepository
     {
         return await _context.Customers
             .FirstOrDefaultAsync(c => c.IdentityUserId == identityUserId, cancellationToken);
+    }
+    
+    public async Task<Customer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _context.Customers
+            .FirstOrDefaultAsync(c => c.Email == email, cancellationToken);
     }
 }

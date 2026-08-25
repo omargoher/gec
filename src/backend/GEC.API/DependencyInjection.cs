@@ -37,7 +37,7 @@ public static class DependencyInjection
         AddJwtAuthentication(services, configuration);
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-
+        services.AddScoped<ICartResolver, CartResolver>();
         return services;
     }
 
