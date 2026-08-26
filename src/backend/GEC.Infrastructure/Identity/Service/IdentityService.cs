@@ -27,6 +27,19 @@ public class IdentityService : IIdentityService
         );
     }
 
+    public async Task<(bool Succeeded, string? UserId, IEnumerable<string> Errors)> CreateExternalUserAsync(
+        string email, string name)
+    {
+        var user = new ApplicationUser { Email = email, UserName = email };
+        var result = await _userManager.CreateAsync(user);
+
+        return (
+            result.Succeeded,
+            result.Succeeded ? user.Id : null,
+            result.Errors.Select(e => e.Description)
+        );
+    }
+
     public async Task<AppUserDto?> FindByEmailAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);

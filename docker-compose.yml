@@ -45,12 +45,16 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__pgsql=Host=${DB_HOST};Port=${DB_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - Serilog__WriteTo__1__Args__serverUrl=http://seq:80
+<<<<<<< HEAD
       - MailSettings__Host=${MAIL_HOST} 
       - MailSettings__Port=${MAIL_PORT}
       - MailSettings__FromName=${MAIL_FROM_NAME}
       - MailSettings__FromEmail=${MAIL_FROM_EMAIL}
       - MailSettings__UserName=${MAIL_USERNAME}
       - MailSettings__Password=${MAIL_PASSWORD}
+=======
+      - ExternalAuthSettings__GoogleClientId=${GOOGLE_CLIENT_ID}
+>>>>>>> e62a938 (feat(auth): add Google OAuth single sign-on integration)
 
 volumes:
   postgres_data:

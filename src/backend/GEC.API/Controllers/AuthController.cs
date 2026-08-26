@@ -79,6 +79,29 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Login With google.
+    /// </summary>
+    /// <param name="request">Token</param>
+    /// <param name="cancellationToken"></param>
+    /// <response code="200">Account created if not exist and set access, refresh token cookies.</response>
+    [HttpPost("google-login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AppUserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AppUserDto>> GoogleLoginAsync(
+        [FromBody] GoogleLoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _authenticationService.LoginWithGoogleAsync(request, cancellationToken);
+
+        SetAccessTokenCookie(result.AccessToken);
+        SetRefreshTokenCookie(result.RefreshToken);
+
+        return NoContent();
+    }
+
+    /// <summary>
     /// Logs in with an email and password.
     /// </summary>
     /// <param name="request">Email and password.</param>

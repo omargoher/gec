@@ -29,6 +29,7 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(OtpOptions.SectionName))
             .Validate(options => !string.IsNullOrWhiteSpace(options.PepperKey), "OTP Pepper must not be empty!")
             .ValidateOnStart();
+        services.Configure<ExternalAuthOptions>(configuration.GetSection(ExternalAuthOptions.SectionName));
         var connectionString = configuration.GetConnectionString("pgsql");
 
         // Register DB Context
