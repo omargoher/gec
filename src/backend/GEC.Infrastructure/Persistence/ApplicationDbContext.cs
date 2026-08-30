@@ -26,6 +26,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<VariantAttributeValue> VariantAttributeValues { get; set; }
     public DbSet<ProductSpecification> ProductSpecifications { get; set; }
 
+    // Favourite / Wishlist
+    public DbSet<Wishlist> Wishlists { get; set; }
+    public DbSet<WishlistItem> WishlistItems { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);

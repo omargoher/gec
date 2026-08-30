@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IAttributeService, AttributeService>();
+        services.AddScoped<IFavouriteService, FavouriteService>();
         services.AddAutoMapper(cfg => { }, typeof(DependencyInjection).Assembly);
         return services;
     }

@@ -30,6 +30,10 @@ public class UnitOfWork : IUnitOfWork
         ProductAttributes = new ProductAttributeRepository(_context);
         VariantAttributeValues = new VariantAttributeValueRepository(_context);
         ProductSpecifications = new ProductSpecificationRepository(_context);
+
+        // Favourite / Wishlist repositories
+        Wishlists = new WishlistRepository(_context);
+        WishlistItems = new WishlistItemRepository(_context);
     }
 
     public ITestUserRepository TestUser { get; private set; }
@@ -46,6 +50,10 @@ public class UnitOfWork : IUnitOfWork
     public IProductAttributeRepository ProductAttributes { get; private set; }
     public IVariantAttributeValueRepository VariantAttributeValues { get; private set; }
     public IProductSpecificationRepository ProductSpecifications { get; private set; }
+
+    // Favourite / Wishlist
+    public IWishlistRepository Wishlists { get; private set; }
+    public IWishlistItemRepository WishlistItems { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

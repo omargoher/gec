@@ -1,4 +1,3 @@
-
 using GEC.ApplicationCore.Interfaces.Repositories;
 
 namespace GEC.ApplicationCore.Interfaces.Persistence;
@@ -18,6 +17,10 @@ public interface IUnitOfWork : IDisposable
     IProductAttributeRepository ProductAttributes { get; }
     IVariantAttributeValueRepository VariantAttributeValues { get; }
     IProductSpecificationRepository ProductSpecifications { get; }
+
+    // Favourite / Wishlist
+    IWishlistRepository Wishlists { get; }
+    IWishlistItemRepository WishlistItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
