@@ -18,4 +18,6 @@ public interface ICategoryService
     Task<CategoryResponse> GetCategoryBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CategoryTreeNodeDto>> GetCategoryTreeAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CategoryAdminTreeNodeDto>> GetCategoryAdminTreeAsync(CancellationToken cancellationToken = default);
+    Task AddProductAsync(Guid categoryId, Guid productId, CancellationToken cancellationToken = default);
+    Task RemoveProductAsync(Guid categoryId, Guid productId, CancellationToken cancellationToken = default);
 }

@@ -129,6 +129,38 @@ public class CategoryService : ICategoryService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task AddProductAsync(Guid categoryId, Guid productId, CancellationToken cancellationToken = default)
+    {
+        var category = await _unitOfWork.Category.GetByIdAsync(categoryId, cancellationToken)
+                       ?? throw new NotFoundException("Category");
+
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
+                      ?? throw new NotFoundException("Product");
+
+        var exists = await _unitOfWork.ProductCategory.ExistsAsync(productId, categoryId, cancellationToken);
+        if (exists)
+        {
+            throw new ConflictException("Product Category");
+        }
+
+        _unitOfWork.ProductCategory.Add(new ProductCategory
+        {
+            Product = product,
+            Category = category
+        });
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RemoveProductAsync(Guid categoryId, Guid productId, CancellationToken cancellationToken = default)
+    {
+        var productCategory = await _unitOfWork.ProductCategory.GetAsync(productId, categoryId, cancellationToken)
+                              ?? throw new NotFoundException("Product Category");
+
+        _unitOfWork.ProductCategory.Remove(productCategory);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<bool> IsSlugAvailableAsync(CheckSlugAvailabilityRequest request, CancellationToken cancellationToken = default)
     {
         var slug = request.Slug?.ToLowerInvariant();

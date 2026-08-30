@@ -211,4 +211,48 @@ public class CategoryController : ControllerBase
         var breadcrumbs = await _categoryService.GetBreadcrumbsBySlugAsync(request, cancellationToken);
         return Ok(breadcrumbs);
     }
+
+    /// <summary>
+    /// Adds a product to a category.
+    /// </summary>
+    /// <param name="categoryId"></param>
+    /// <param name="productId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <response code="204">Product added to category.</response>
+    /// <response code="404">The category or product does not exist.</response>
+    /// <response code="409">The product is already assigned to this category.</response>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{categoryId:guid}/products/{productId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> AddProductAsync(
+        Guid categoryId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        await _categoryService.AddProductAsync(categoryId, productId, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Removes a product from a category.
+    /// </summary>
+    /// <param name="categoryId"></param>
+    /// <param name="productId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <response code="204">Product removed from category.</response>
+    /// <response code="404">The product is not assigned to this category.</response>
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{categoryId:guid}/products/{productId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> RemoveProductAsync(
+        Guid categoryId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        await _categoryService.RemoveProductAsync(categoryId, productId, cancellationToken);
+        return NoContent();
+    }
 }
