@@ -30,6 +30,9 @@ public class UnitOfWork : IUnitOfWork
         ProductAttributes = new ProductAttributeRepository(_context);
         VariantAttributeValues = new VariantAttributeValueRepository(_context);
         ProductSpecifications = new ProductSpecificationRepository(_context);
+        
+        // Carts
+        Carts = new CartRepository(_context);
     }
 
     public ITestUserRepository TestUser { get; private set; }
@@ -38,6 +41,7 @@ public class UnitOfWork : IUnitOfWork
     public ICategoryRepository Category { get; private set; }
 
     public IProductCategoryRepository ProductCategory { get; private set; }
+
     // Catalog
     public IProductRepository Products { get; private set; }
     public IProductVariantRepository ProductVariants { get; private set; }
@@ -46,6 +50,9 @@ public class UnitOfWork : IUnitOfWork
     public IProductAttributeRepository ProductAttributes { get; private set; }
     public IVariantAttributeValueRepository VariantAttributeValues { get; private set; }
     public IProductSpecificationRepository ProductSpecifications { get; private set; }
+
+    // Carts
+    public ICartRepository Carts { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

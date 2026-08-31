@@ -7,4 +7,6 @@ public interface ICustomerRepository : IBaseRepository<Customer>
     Task<Customer?> GetByIdentityUserIdAsync(
         string identityUserId,
         CancellationToken cancellationToken = default);
+
+    Task<Customer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

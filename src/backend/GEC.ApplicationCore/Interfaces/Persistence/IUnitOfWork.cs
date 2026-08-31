@@ -18,6 +18,7 @@ public interface IUnitOfWork : IDisposable
     IProductAttributeRepository ProductAttributes { get; }
     IVariantAttributeValueRepository VariantAttributeValues { get; }
     IProductSpecificationRepository ProductSpecifications { get; }
+    ICartRepository Carts { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

@@ -14,6 +14,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Admin> Admins { get; set; }
     public DbSet<Address> Addresses { get; set; }
+    
+    // Carts
+    public DbSet<Cart> Carts { get; set; }
+    public DbSet<CartItem> CartItems { get; set; }
 
     public DbSet<Category> Categories { get; set; }
 

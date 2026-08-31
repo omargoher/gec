@@ -9,4 +9,5 @@ public interface ICurrentUserService
     bool IsAuthenticated { get; }
 
     Task<Guid> GetCustomerIdAsync(CancellationToken cancellationToken = default);
+    Task<Guid> GetCustomerIdByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

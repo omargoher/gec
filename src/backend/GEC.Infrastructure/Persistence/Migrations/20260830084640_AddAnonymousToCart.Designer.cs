@@ -3,6 +3,7 @@ using System;
 using GEC.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GEC.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260830084640_AddAnonymousToCart")]
+    partial class AddAnonymousToCart
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -401,10 +404,6 @@ namespace GEC.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid>("CartId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("cart_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -522,22 +521,6 @@ namespace GEC.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_product_attributes_attribute_id");
 
                     b.ToTable("product_attributes", (string)null);
-                });
-
-            modelBuilder.Entity("GEC.Domain.Entities.ProductCategory", b =>
-                {
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("category_id");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_id");
-
-                    b.HasKey("CategoryId", "ProductId")
-                        .HasName("pk_products_categories");
-
-                    b.ToTable("products_categories", (string)null);
                 });
 
             modelBuilder.Entity("GEC.Domain.Entities.ProductSpecification", b =>
@@ -795,27 +778,6 @@ namespace GEC.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("GEC.Domain.Entities.ProductCategory", b =>
-                {
-                    b.HasOne("GEC.Domain.Entities.Category", "Category")
-                        .WithMany("ProductCategories")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_products_categories_categories_category_id");
-
-                    b.HasOne("GEC.Domain.Entities.Product", "Product")
-                        .WithMany("ProductCategories")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_products_categories_products_category_id");
-
-                    b.Navigation("Category");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("GEC.Domain.Entities.ProductSpecification", b =>
                 {
                     b.HasOne("GEC.Domain.Entities.Product", "Product")
@@ -898,8 +860,6 @@ namespace GEC.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("GEC.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Children");
-
-                    b.Navigation("ProductCategories");
                 });
 
             modelBuilder.Entity("GEC.Domain.Entities.Customer", b =>
@@ -913,22 +873,6 @@ namespace GEC.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("GEC.Domain.Entities.Product", b =>
                 {
                     b.Navigation("ProductAttributes");
-
-                    b.Navigation("Specifications");
-
-                    b.Navigation("Variants");
-                });
-
-            modelBuilder.Entity("GEC.Domain.Entities.ProductVariant", b =>
-                {
-                    b.Navigation("AttributeValues");
-                });
-
-            modelBuilder.Entity("GEC.Domain.Entities.Product", b =>
-                {
-                    b.Navigation("ProductAttributes");
-
-                    b.Navigation("ProductCategories");
 
                     b.Navigation("Specifications");
 
